@@ -1,28 +1,26 @@
 name: Build Unsigned Clip IPA
 
 on:
-  workflow_dispatch: # Allows manual trigger from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build Unsigned IPA
-    runs-on: macos-14 # Uses macOS Sonoma with modern Xcode pre-installed
+    runs-on: macos-14
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive # Important if Clip uses git submodules/dependencies
+          submodules: recursive
 
       - name: Set up Xcode
         run: |
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
 
-      - name: Build App (Simulator / Unsigned target)
+      - name: Build App
         run: |
-          # Clip is an iOS application. We build it for the iphonesimulator SDK 
-          # to bypass strict device-provisioning requirements for an unsigned build.
           xcodebuild build \
             -project Clip.xcodeproj \
             -scheme Clip \
@@ -36,17 +34,8 @@ jobs:
       - name: Package Unsigned IPA
         run: |
           mkdir -p Payload
-          # Locate the built .app product inside DerivedData
           APP_PATH=$(find Build/DerivedData/Build/Products/Release-iphonesimulator -name "Clip.app" -type d)
-          
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: Clip.app not found!"
-            exit 1
-          fi
-          
           cp -r "$APP_PATH" Payload/
-          
-          # Compress into an .ipa file
           zip -r Clip-unsigned.ipa Payload
           rm -rf Payload
 
