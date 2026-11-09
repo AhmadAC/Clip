@@ -2,6 +2,8 @@ name: Build Unsigned Clip IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
@@ -19,10 +21,10 @@ jobs:
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
 
-      - name: Build App
+      - name: Build App Workspace
         run: |
           xcodebuild build \
-            -project Clip.xcodeproj \
+            -workspace Clip.xcworkspace \
             -scheme Clip \
             -sdk iphonesimulator \
             -configuration Release \
@@ -35,6 +37,12 @@ jobs:
         run: |
           mkdir -p Payload
           APP_PATH=$(find Build/DerivedData/Build/Products/Release-iphonesimulator -name "Clip.app" -type d)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Clip.app not found!"
+            exit 1
+          fi
+          
           cp -r "$APP_PATH" Payload/
           zip -r Clip-unsigned.ipa Payload
           rm -rf Payload
