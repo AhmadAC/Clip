@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # Step 1: Check out repository code
+      # Step 1: Check out repository code (including submodules like Roxas)
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -24,27 +24,27 @@ jobs:
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
 
-      # Step 3: Build Clip Xcode Workspace (Unsigned for Sideloading)
-      - name: Build Xcode Workspace
+      # Step 3: Build Clip Xcode Project (Unsigned for Simulator/Sideloading)
+      - name: Build Xcode Project
         run: |
-          xcodebuild -workspace Clip.xcworkspace \
+          xcodebuild build \
+            -project Clip.xcodeproj \
             -scheme Clip \
+            -sdk iphonesimulator \
             -configuration Release \
-            -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            ENABLE_USER_SCRIPT_SANDBOXING=NO \
-            build
+            ENABLE_USER_SCRIPT_SANDBOXING=NO
 
       # Step 4: Create Payload & Package .ipa
       - name: Package Payload into IPA
         run: |
           mkdir -p build/IPA/Payload
           
-          # Find and copy Clip.app from the build products
-          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "Clip.app" -type d)
+          # Find Clip.app inside the derived data simulator build products
+          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "Clip.app" -type d)
           
           if [ -z "$APP_PATH" ]; then
             echo "Error: Clip.app not found!"
